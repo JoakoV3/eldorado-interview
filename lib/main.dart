@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:interview/presentation/home_page.dart';
-import 'package:interview/presentation/theme/app_theme.dart';
+import 'package:interview/core/theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: AppTheme.theme,
-      home: const HomePage(),
+      home: HomePage(),
     );
   }
 }
