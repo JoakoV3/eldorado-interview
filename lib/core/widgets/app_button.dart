@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:interview/core/theme/app_theme.dart';
 
 class AppButton extends StatelessWidget {
-  const AppButton({super.key, required this.text, required this.onPressed});
+  const AppButton({
+    super.key,
+    required this.text,
+    required this.onPressed,
+    this.isLoading = false,
+  });
   final String text;
   final VoidCallback onPressed;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +30,21 @@ class AppButton extends StatelessWidget {
             const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           ),
         ),
-        child: Text(text),
+        child: isLoading ? _CircularProgress() : Text(text),
       ),
+    );
+  }
+}
+
+class _CircularProgress extends StatelessWidget {
+  const _CircularProgress();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 20,
+      width: 20,
+      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 1.5),
     );
   }
 }

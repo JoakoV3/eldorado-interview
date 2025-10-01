@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:interview/core/theme/app_theme.dart';
 import 'package:interview/core/widgets/app_button.dart';
-import 'package:interview/presentation/widgets/currency_input.dart';
+import 'package:interview/domain/models/currency.dart';
+import 'package:interview/presentation/bloc/currency_bloc.dart';
+
+import 'widgets/widgets.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -10,7 +14,6 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       backgroundColor: AppTheme.secondaryColor,
       body: Stack(
         children: [
@@ -33,13 +36,10 @@ class HomePage extends StatelessWidget {
 }
 
 class _Currencycontainer extends StatelessWidget {
-  const _Currencycontainer({super.key});
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    String selectedFromCurrency = 'USDT';
-    String selectedToCurrency = 'VES';
+    final currencyBloc = context.read<CurrencyBloc>();
 
     return SingleChildScrollView(
       child: Container(
@@ -52,30 +52,89 @@ class _Currencycontainer extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(30),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 12,
-              children: [
-                CurrencySelector(),
-                CurrencyInput(
-                  selectedCurrency: selectedFromCurrency,
-                  onCurrencyChanged: (value) {
-                    //TODO: Implementar la lógica para cambiar la moneda
-                  },
-                ),
-                SizedBox(height: 10),
-                _BuildInfoRow(label: 'Tasa estimada', value: '= 25.00 VES'),
-                _BuildInfoRow(label: 'Recibirás', value: '= 125.00 VES'),
-                _BuildInfoRow(label: 'Tiempo estimado', value: '= 10 Min'),
-                // Botón de cambiar
-                AppButton(
-                  text: 'Cambiar',
-                  onPressed: () {
-                    // Lógica para cambiar
-                  },
-                ),
-              ],
+            child: BlocBuilder<CurrencyBloc, CurrencyState>(
+              builder: (context, state) {
+                final selectedFromCurrency = state.selectedFromCurrency;
+                final selectedToCurrency = state.selectedToCurrency;
+
+                if (state.status == CurrencyStatus.loading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (selectedFromCurrency == null ||
+                    selectedToCurrency == null) {
+                  return const SizedBox.expand(
+                    child: Center(child: Text('No se han cargado las monedas')),
+                  );
+                }
+
+                final isCryptoToFiat =
+                    selectedFromCurrency.type == CurrencyType.crypto;
+
+                final fiatCurrencyId = isCryptoToFiat
+                    ? selectedToCurrency.id
+                    : selectedFromCurrency.id;
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 12,
+                  children: [
+                    CurrencySelector(
+                      fromCurrency: selectedFromCurrency,
+                      toCurrency: selectedToCurrency,
+                      invertCurrencies: () =>
+                          currencyBloc.add(SwapCurrenciesEvent()),
+                    ),
+
+                    CurrencyInput(
+                      selectedCurrency: selectedFromCurrency.code,
+                      onCurrencyChanged: (value) =>
+                          currencyBloc.add(UpdateAmountEvent(value)),
+                    ),
+
+                    SizedBox(height: 10),
+
+                    if (state.exchangeRate != null) ...{
+                      _BuildInfoRow(
+                        label: 'Tasa estimada',
+                        value: fiatCurrencyId,
+                        amount:
+                            state.exchangeRate?.rate.toStringAsFixed(2) ?? '',
+                      ),
+                      _BuildInfoRow(
+                        label: 'Recibirás',
+                        value: selectedToCurrency.code,
+                        amount:
+                            state.exchangeRate?.amountToReceive.toStringAsFixed(
+                              2,
+                            ) ??
+                            '',
+                      ),
+                      _BuildInfoRow(
+                        label: 'Tiempo estimado',
+                        value: 'Min',
+                        amount: '10',
+                      ),
+                    },
+
+                    AppButton(
+                      text: 'Cambiar',
+                      isLoading:
+                          state.status == CurrencyStatus.converting ||
+                          state.status == CurrencyStatus.loading,
+                      onPressed: () => currencyBloc.add(ConvertCurrencyEvent()),
+                    ),
+
+                    if (state.status == CurrencyStatus.error)
+                      Text(
+                        state.errorMessage ?? '',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.red),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -84,36 +143,16 @@ class _Currencycontainer extends StatelessWidget {
   }
 }
 
-class CurrencySelector extends StatelessWidget {
-  const CurrencySelector({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.primaryColor),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Row(
-        children: [
-          Image.asset(
-            'assets/cripto_currencies/TATUM-TRON-USDT.png',
-            width: 24,
-            height: 24,
-          ),
-          Text('USDT'),
-        ],
-      ),
-    );
-  }
-}
-
 class _BuildInfoRow extends StatelessWidget {
-  const _BuildInfoRow({required this.label, required this.value});
+  const _BuildInfoRow({
+    required this.label,
+    required this.value,
+    this.amount = '',
+  });
 
   final String label;
   final String value;
+  final String amount;
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +161,7 @@ class _BuildInfoRow extends StatelessWidget {
       children: [
         Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
         Text(
-          value,
+          '= $amount $value',
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
       ],

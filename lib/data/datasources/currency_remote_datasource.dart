@@ -46,19 +46,25 @@ class CurrencyRemoteDataSourceImpl implements CurrencyRemoteDataSource {
 
     if (response.statusCode != 200) {
       throw Exception(
-        'Error al obtener la tasa de cambio: ${response.statusCode}',
+        'Error al obtener la tasa de cambio: ${response.statusCode}. Body: ${response.body}',
       );
     }
 
-    final jsonResponse = json.decode(response.body);
-    final exchangeRate = ApiResponseModel.fromJson(
-      jsonResponse,
-    ).fiatToCryptoExchangeRate;
+    try {
+      final jsonResponse = json.decode(response.body);
+      final exchangeRate = ApiResponseModel.fromJson(
+        jsonResponse,
+      ).fiatToCryptoExchangeRate;
 
-    if (exchangeRate == 0) {
-      throw Exception('Error al obtener la tasa de cambio');
+      if (exchangeRate == 0) {
+        throw Exception('Error: tasa de cambio es 0');
+      }
+
+      return exchangeRate;
+    } catch (e) {
+      throw Exception(
+        'Error procesando respuesta de la API: $e. Response body: ${response.body}',
+      );
     }
-
-    return exchangeRate;
   }
 }

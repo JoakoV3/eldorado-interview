@@ -7,13 +7,11 @@ class CurrencyInput extends StatelessWidget {
     super.key,
     required this.selectedCurrency,
     required this.onCurrencyChanged,
-    this.controller,
     this.enabled = true,
   });
 
   final String selectedCurrency;
   final Function(String) onCurrencyChanged;
-  final TextEditingController? controller;
   final bool enabled;
 
   @override
@@ -33,8 +31,8 @@ class CurrencyInput extends StatelessWidget {
           const SizedBox(width: 16),
           Expanded(
             child: TextField(
-              controller: controller,
               enabled: enabled,
+              onChanged: onCurrencyChanged,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -50,11 +48,4 @@ class CurrencyInput extends StatelessWidget {
       ),
     );
   }
-}
-
-class CurrencyOption {
-  final String code;
-  final Widget? icon;
-
-  CurrencyOption({required this.code, this.icon});
 }

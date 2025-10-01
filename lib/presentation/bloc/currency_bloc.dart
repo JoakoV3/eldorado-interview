@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -141,9 +143,10 @@ class CurrencyBloc extends Bloc<CurrencyEvent, CurrencyState> {
       emit(
         state.copyWith(
           status: CurrencyStatus.error,
-          errorMessage: 'Error al realizar la conversión: $e',
+          errorMessage: 'Error al obtener la tasa de cambio. Intenta más tarde',
         ),
       );
+      log(e.toString());
     }
   }
 
