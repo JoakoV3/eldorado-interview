@@ -1,3 +1,8 @@
+## Resultado:
+
+<img width="400" alt="image" src="https://github.com/user-attachments/assets/bb162286-1772-41e3-81a1-f465790d9d7c" />
+
+
 # Bienvenido al coding-interview-frontend
 
 ## Descripción
